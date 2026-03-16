@@ -303,6 +303,7 @@ function addTransaction(){
     document.getElementById("date").value=new Date().toISOString().split("T")[0];
 }
 
+// Only Transactions tab has edit button
 function editRow(i){
     let t=transactions[i];
     document.getElementById("date").value=t.date;
@@ -372,7 +373,6 @@ function renderHistory(){
                     <td>${t.desc}</td>
                     <td>${t.amount.toFixed(2)}</td>
                     <td>
-                        <button class="edit-btn" onclick="editRow(${i})">Edit</button>
                         <button class="edit-btn" onclick="deleteRow(${i})">Delete</button>
                     </td>
                 </tr>`;
@@ -384,7 +384,6 @@ function renderHistory(){
                     <td>${t.desc}</td>
                     <td>${t.amount.toFixed(2)}</td>
                     <td>
-                        <button class="edit-btn" onclick="editRow(${i})">Edit</button>
                         <button class="edit-btn" onclick="deleteRow(${i})">Delete</button>
                     </td>
                 </tr>`;
@@ -394,20 +393,13 @@ function renderHistory(){
     document.getElementById("incomeTotal").textContent=incomeTotal.toFixed(2);
     document.getElementById("expenseTotal").textContent=expenseTotal.toFixed(2);
 
-    // Remaining Income box with dynamic color
+    // Remaining Income box
     let remaining = incomeTotal - expenseTotal;
     let box = document.getElementById("remainingIncomeBox");
     box.textContent = "Remaining Income: " + remaining.toFixed(2);
-    if(remaining > 0){
-        box.style.background = "#d4edda"; 
-        box.style.borderLeft = "5px solid #28a745";
-    } else if(remaining < 0){
-        box.style.background = "#f8d7da"; 
-        box.style.borderLeft = "5px solid #dc3545";
-    } else {
-        box.style.background = "#f0f0f0"; 
-        box.style.borderLeft = "5px solid #ccc";
-    }
+    if(remaining > 0){ box.style.background = "#d4edda"; box.style.borderLeft = "5px solid #28a745"; }
+    else if(remaining < 0){ box.style.background = "#f8d7da"; box.style.borderLeft = "5px solid #dc3545"; }
+    else { box.style.background = "#f0f0f0"; box.style.borderLeft = "5px solid #ccc"; }
 }
 
 function populateChartYears(){
