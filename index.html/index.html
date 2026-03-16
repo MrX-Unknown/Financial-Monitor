@@ -9,6 +9,12 @@ body{
     padding:20px;
 }
 
+#mainTitle {
+    text-align: center;
+    font-size: 4em; /* 4 times bigger */
+    margin-bottom: 20px;
+}
+
 .tab-buttons{
     display:flex;
     margin-bottom:10px;
@@ -99,7 +105,7 @@ tfoot td{
 </head>
 <body>
 
-<h1>Financial Monitoring</h1>
+<h1 id="mainTitle">Financial Monitor</h1>
 
 <div class="tab-buttons">
     <button class="active" onclick="openTab('transactions',this)">Transactions</button>
