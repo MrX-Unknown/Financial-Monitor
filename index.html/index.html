@@ -21,6 +21,7 @@ table th{background:#f0f0f0;}
 .expense{color:red;}
 tfoot td{font-weight:bold;background:#f5f5f5;}
 #remainingIncomeBox{margin-top:10px;padding:10px;font-weight:bold;text-align:center;}
+#historyEditContainer{display:none;background:#f9f9f9; padding:10px; margin-bottom:10px; border:1px solid #ccc;}
 </style>
 </head>
 <body>
@@ -78,7 +79,8 @@ tfoot td{font-weight:bold;background:#f5f5f5;}
 <div id="history" class="tab-content">
 <h2>History</h2>
 
-<div id="historyEditContainer" style="background:#f9f9f9; padding:10px; margin-bottom:10px; border:1px solid #ccc;">
+<!-- Edit section hidden by default -->
+<div id="historyEditContainer">
 <h3>Edit Transaction</h3>
 <label>Date</label>
 <input type="date" id="histDate">
@@ -142,7 +144,6 @@ let chart;
 let editingIndex = null;
 
 function saveData(){ localStorage.setItem("transactions",JSON.stringify(transactions)); }
-
 function rebuildSuggestions(){
 incomeDescriptions=[]; expenseDescriptions=[];
 transactions.forEach(t=>{
@@ -151,7 +152,6 @@ if(t.type==="expense"&&!expenseDescriptions.includes(t.desc)) expenseDescription
 });
 updateSuggestions();
 }
-
 function updateSuggestions(){
 let type=document.getElementById("type").value;
 let datalist=document.getElementById("descriptionList");
@@ -159,7 +159,6 @@ datalist.innerHTML="";
 let list=(type==="income")?incomeDescriptions:expenseDescriptions;
 list.forEach(desc=>{let option=document.createElement("option");option.value=desc;datalist.appendChild(option);});
 }
-
 function openTab(tabId,btn){
 document.querySelectorAll(".tab-content").forEach(t=>t.classList.remove("active"));
 document.querySelectorAll(".tab-buttons button").forEach(b=>b.classList.remove("active"));
@@ -167,9 +166,7 @@ document.getElementById(tabId).classList.add("active"); btn.classList.add("activ
 if(tabId==="history") renderHistory();
 if(tabId==="chart"){populateChartYears();renderChart();}
 }
-
 function getCurrentMonth(){ let d=new Date(); return {month:d.getMonth(),year:d.getFullYear()}; }
-
 function addTransaction(){
 let date=document.getElementById("date").value;
 let type=document.getElementById("type").value;
@@ -181,8 +178,7 @@ saveData();renderTable();updateBalance();rebuildSuggestions();
 document.getElementById("desc").value="";document.getElementById("amount").value="";
 document.getElementById("date").value=new Date().toISOString().split("T")[0];
 }
-
-// Transactions tab edit
+// Transactions edit
 function editRow(i){
 let t=transactions[i];
 document.getElementById("date").value=t.date;
@@ -192,10 +188,9 @@ document.getElementById("amount").value=t.amount;
 transactions.splice(i,1);
 saveData(); renderTable(); updateBalance(); rebuildSuggestions();
 }
-
 function deleteRow(i){if(confirm("Delete this record?")){transactions.splice(i,1);saveData();renderTable();updateBalance();rebuildSuggestions();}}
 
-// History tab edit
+// History edit
 function editHistoryRow(actualIndex){
 editingIndex=actualIndex;
 let t=transactions[actualIndex];
@@ -203,6 +198,8 @@ document.getElementById("histDate").value=t.date;
 document.getElementById("histType").value=t.type;
 document.getElementById("histDesc").value=t.desc;
 document.getElementById("histAmount").value=t.amount;
+// Show the edit container when editing
+document.getElementById("historyEditContainer").style.display="block";
 }
 
 function saveHistoryEdit(){
@@ -215,6 +212,7 @@ if(!date||!desc||!amount){alert("Please fill all fields");return;}
 transactions[editingIndex]={date,type,desc,amount};
 saveData(); renderHistory(); renderTable(); updateBalance(); rebuildSuggestions();
 editingIndex=null;
+document.getElementById("historyEditContainer").style.display="none";
 document.getElementById("histDate").value="";
 document.getElementById("histType").value="income";
 document.getElementById("histDesc").value="";
