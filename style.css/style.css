@@ -1,122 +1,26 @@
+/* Base styles for the page */
 body {
-  font-family: Arial;
-  background: #f2f2f2;
-  padding: 20px;
-  margin: 0;
+    font-family: Arial, sans-serif;
+    text-align: left;
+    background-color: #f2f2f2;
+    margin: 0;
+    padding: 0;
 }
 
-#mainTitle {
-  text-align: center;
-  font-size: 4em;
-  margin-bottom: 20px;
+/* Style for form elements */
+input,
+select,
+button {
+    padding: 10px;
+    margin: 5px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
 }
 
-.tab-buttons {
-  display: flex;
-  margin-bottom: 10px;
-}
-
-.tab-buttons button {
-  flex: 1;
-  padding: 10px;
-  border: none;
-  background: #ddd;
-  cursor: pointer;
-}
-
-.tab-buttons button.active {
-  background: #4285f4;
-  color: white;
-}
-
-.tab-content {
-  display: none;
-}
-
-.tab-content.active {
-  display: block;
-}
-
-#container {
-  max-width: 400px;
-  margin: auto;
-}
-
-input, select, button {
-  padding: 10px;
-  margin: 5px 0;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.add-btn, .save-btn {
-  width: 100%;
-  cursor: pointer;
-}
-
-.edit-btn {
-  padding: 3px 6px;
-  font-size: 12px;
-  cursor: pointer;
-  margin: 2px;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-  background: white;
-}
-
-table th, table td {
-  border: 1px solid #ccc;
-  padding: 8px;
-  text-align: center;
-}
-
-table th {
-  background: #f0f0f0;
-}
-
-.income {
-  color: green;
-}
-
-.expense {
-  color: red;
-}
-
-tfoot td {
-  font-weight: bold;
-  background: #f5f5f5;
-}
-
-#remainingIncomeBox {
-  margin-top: 10px;
-  padding: 10px;
-  font-weight: bold;
-  text-align: center;
-}
-
-#historyEditContainer {
-  display: none;
-  background: #f9f9f9;
-  padding: 10px;
-  margin-bottom: 10px;
-  border: 1px solid #ccc;
-}
-
-/* Mobile Responsive */
-@media (max-width: 600px) {
-  #mainTitle { font-size: 2.5em; }
-  .tab-buttons { flex-direction: column; }
-  .tab-buttons button { margin-bottom: 5px; font-size: 14px; }
-  table, thead, tbody, th, td, tr { display: block; }
-  table thead tr { display: none; }
-  table tr { margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; padding: 10px; background: #fff; }
-  table td { display: flex; justify-content: space-between; padding: 5px 10px; border: none; }
-  table tfoot td { display: block; text-align: right; background: #f5f5f5; }
-  #container input, #container select, #container button { font-size: 14px; }
-  #remainingIncomeBox { font-size: 14px; padding: 8px; }
-  #chart canvas { width: 100% !important; height: auto !important; }
+/* Remove bullets from unordered lists */
+ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
 }
