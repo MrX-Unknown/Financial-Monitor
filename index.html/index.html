@@ -4,7 +4,141 @@
 <meta charset="UTF-8">
 <title>Financial Monitor</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="style.css">
+<style>
+/* --- Base Styles --- */
+body{
+  font-family: Arial;
+  background:#f2f2f2;
+  padding:20px;
+  margin:0;
+}
+
+#mainTitle{
+  text-align:center;
+  font-size:4em;
+  margin-bottom:20px;
+}
+
+.tab-buttons{
+  display:flex;
+  margin-bottom:10px;
+}
+
+.tab-buttons button{
+  flex:1;
+  padding:10px;
+  border:none;
+  background:#ddd;
+  cursor:pointer;
+}
+
+.tab-buttons button.active{
+  background:#4285f4;
+  color:white;
+}
+
+.tab-content{
+  display:none;
+}
+
+.tab-content.active{
+  display:block;
+}
+
+#container{
+  max-width:400px;
+  margin:auto;
+}
+
+input, select, button{
+  padding:10px;
+  margin:5px 0;
+  width:100%;
+  box-sizing:border-box;
+}
+
+.add-btn, .save-btn{
+  width:100%;
+  cursor:pointer;
+}
+
+.edit-btn{
+  padding:3px 6px;
+  font-size:12px;
+  cursor:pointer;
+  margin:2px;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:20px;
+  background:white;
+}
+
+table th, table td{
+  border:1px solid #ccc;
+  padding:8px;
+  text-align:center;
+}
+
+table th{
+  background:#f0f0f0;
+}
+
+.income{ color:green; }
+.expense{ color:red; }
+
+tfoot td{
+  font-weight:bold;
+  background:#f5f5f5;
+}
+
+#remainingIncomeBox{
+  margin-top:10px;
+  padding:10px;
+  font-weight:bold;
+  text-align:center;
+}
+
+#historyEditContainer{
+  display:none;
+  background:#f9f9f9;
+  padding:10px;
+  margin-bottom:10px;
+  border:1px solid #ccc;
+}
+
+/* --- Mobile Responsive --- */
+@media (max-width: 600px){
+  #mainTitle{ font-size:2.5em; }
+  .tab-buttons{ flex-direction:column; }
+  .tab-buttons button{ margin-bottom:5px; font-size:14px; }
+  #container input, #container select, #container button{ font-size:14px; }
+  table, thead, tbody, th, td, tr{ display:block; }
+  table thead tr{ display:none; }
+  table tr{
+    margin-bottom:15px;
+    border:1px solid #ccc;
+    border-radius:5px;
+    padding:10px;
+    background:#fff;
+  }
+  table td{
+    display:flex;
+    justify-content:space-between;
+    padding:5px 10px;
+    border:none;
+  }
+  table tfoot td{
+    display:block;
+    text-align:right;
+    background:#f5f5f5;
+  }
+  #remainingIncomeBox{ font-size:14px; padding:8px; }
+  #chart canvas{ width:100% !important; height:auto !important; }
+}
+</style>
 </head>
 <body>
 
@@ -117,6 +251,169 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="script.js"></script>
+<script>
+/* --- JS Code (Integrated & Updated for Responsiveness) --- */
+let transactions = JSON.parse(localStorage.getItem("transactions")) || [];
+let incomeDescriptions = [];
+let expenseDescriptions = [];
+let chart;
+let editingIndex = null;
+
+function saveData() { localStorage.setItem("transactions", JSON.stringify(transactions)); }
+
+function rebuildSuggestions() {
+  incomeDescriptions = [];
+  expenseDescriptions = [];
+  transactions.forEach(t => {
+    if (t.type === "income" && !incomeDescriptions.includes(t.desc)) incomeDescriptions.push(t.desc);
+    if (t.type === "expense" && !expenseDescriptions.includes(t.desc)) expenseDescriptions.push(t.desc);
+  });
+  updateSuggestions();
+}
+
+function updateSuggestions() {
+  let type = document.getElementById("type").value;
+  let datalist = document.getElementById("descriptionList");
+  datalist.innerHTML = "";
+  let list = (type === "income") ? incomeDescriptions : expenseDescriptions;
+  list.forEach(desc => { let option = document.createElement("option"); option.value = desc; datalist.appendChild(option); });
+}
+
+function openTab(tabId, btn) {
+  document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
+  document.querySelectorAll(".tab-buttons button").forEach(b => b.classList.remove("active"));
+  document.getElementById(tabId).classList.add("active"); btn.classList.add("active");
+  if (tabId === "history") renderHistory();
+  if (tabId === "chart") { populateChartYears(); renderChart(); }
+}
+
+function getCurrentMonth() { let d = new Date(); return { month: d.getMonth(), year: d.getFullYear() }; }
+
+function addTransaction() {
+  let date = document.getElementById("date").value;
+  let type = document.getElementById("type").value;
+  let desc = document.getElementById("desc").value;
+  let amount = parseFloat(document.getElementById("amount").value);
+  if (!date || !desc || !amount) { alert("Please enter Date, Description and Amount"); return; }
+  transactions.push({ date, type, desc, amount });
+  saveData(); renderTable(); updateBalance(); rebuildSuggestions();
+  document.getElementById("desc").value = ""; document.getElementById("amount").value = "";
+  document.getElementById("date").value = new Date().toISOString().split("T")[0];
+}
+
+function editRow(i) {
+  let t = transactions[i];
+  document.getElementById("date").value = t.date;
+  document.getElementById("type").value = t.type;
+  document.getElementById("desc").value = t.desc;
+  document.getElementById("amount").value = t.amount;
+  transactions.splice(i, 1); saveData(); renderTable(); updateBalance(); rebuildSuggestions();
+}
+
+function deleteRow(i) {
+  if (confirm("Delete this record?")) { transactions.splice(i, 1); saveData(); renderTable(); updateBalance(); rebuildSuggestions(); }
+}
+
+function editHistoryRow(actualIndex) {
+  editingIndex = actualIndex;
+  let t = transactions[actualIndex];
+  document.getElementById("histDate").value = t.date;
+  document.getElementById("histType").value = t.type;
+  document.getElementById("histDesc").value = t.desc;
+  document.getElementById("histAmount").value = t.amount;
+  document.getElementById("historyEditContainer").style.display = "block";
+}
+
+function saveHistoryEdit() {
+  if (editingIndex === null) return;
+  let date = document.getElementById("histDate").value;
+  let type = document.getElementById("histType").value;
+  let desc = document.getElementById("histDesc").value;
+  let amount = parseFloat(document.getElementById("histAmount").value);
+  if (!date || !desc || !amount) { alert("Please fill all fields"); return; }
+  transactions[editingIndex] = { date, type, desc, amount };
+  saveData(); renderHistory(); renderTable(); updateBalance(); rebuildSuggestions();
+  editingIndex = null;
+  document.getElementById("historyEditContainer").style.display = "none";
+  document.getElementById("histDate").value = ""; document.getElementById("histType").value = "income";
+  document.getElementById("histDesc").value = ""; document.getElementById("histAmount").value = "";
+}
+
+function renderTable() {
+  let body = document.getElementById("transactionBody"); body.innerHTML = "";
+  let current = getCurrentMonth();
+  transactions.forEach((t, i) => {
+    let d = new Date(t.date);
+    if (d.getMonth() === current.month && d.getFullYear() === current.year) {
+      let row = document.createElement("tr");
+      row.innerHTML = `<td>${t.date}</td><td class="${t.type}">${t.type}</td><td>${t.desc}</td>
+      <td class="${t.type}">${t.amount.toFixed(2)}</td>
+      <td><button class="edit-btn" onclick="editRow(${i})">Edit</button>
+      <button class="edit-btn" onclick="deleteRow(${i})">Delete</button></td>`;
+      body.appendChild(row);
+    }
+  });
+}
+
+function updateBalance() {
+  let balance = 0; let current = getCurrentMonth();
+  transactions.forEach(t => { let d = new Date(t.date); if (d.getMonth() === current.month && d.getFullYear() === current.year) { balance += t.type === "income" ? t.amount : -t.amount; } });
+  document.getElementById("balance").textContent = balance.toFixed(2);
+}
+
+function renderHistory() {
+  let month = parseInt(document.getElementById("historyMonth").value);
+  let year = parseInt(document.getElementById("historyYear").value);
+  let incomeBody = document.getElementById("historyIncome"); let expenseBody = document.getElementById("historyExpense");
+  incomeBody.innerHTML = ""; expenseBody.innerHTML = "";
+  let incomeTotal = 0; let expenseTotal = 0;
+  transactions.forEach((t, i) => {
+    let d = new Date(t.date); if (d.getMonth() === month && d.getFullYear() === year) {
+      let rowHTML = `<td>${t.date}</td><td>${t.desc}</td><td>${t.amount.toFixed(2)}</td>
+      <td><button class="edit-btn" onclick="editHistoryRow(${i})">Edit</button>
+      <button class="edit-btn" onclick="deleteRow(${i})">Delete</button></td>`;
+      let row = document.createElement("tr"); row.innerHTML = rowHTML;
+      if (t.type === "income") { incomeTotal += t.amount; incomeBody.appendChild(row); }
+      else { expenseTotal += t.amount; expenseBody.appendChild(row); }
+    }
+  });
+  document.getElementById("incomeTotal").textContent = incomeTotal.toFixed(2);
+  document.getElementById("expenseTotal").textContent = expenseTotal.toFixed(2);
+  let remaining = incomeTotal - expenseTotal;
+  let box = document.getElementById("remainingIncomeBox"); box.textContent = "Remaining Income: " + remaining.toFixed(2);
+  if (remaining > 0) { box.style.background = "#d4edda"; box.style.borderLeft = "5px solid #28a745"; }
+  else if (remaining < 0) { box.style.background = "#f8d7da"; box.style.borderLeft = "5px solid #dc3545"; }
+  else { box.style.background = "#f0f0f0"; box.style.borderLeft = "5px solid #ccc"; }
+}
+
+function populateChartYears() {
+  let years = Array.from(new Set(transactions.map(t => new Date(t.date).getFullYear())));
+  let chartYear = document.getElementById("chartYear"); chartYear.innerHTML = "";
+  if (years.length === 0) years = [new Date().getFullYear()];
+  years.sort().forEach(y => { let option = document.createElement("option"); option.value = y; option.text = y; chartYear.appendChild(option); });
+}
+
+function renderChart() {
+  let year = parseInt(document.getElementById("chartYear").value);
+  let incomeData = Array(12).fill(0); let expenseData = Array(12).fill(0);
+  transactions.forEach(t => { let d = new Date(t.date); if (d.getFullYear() === year) { if (t.type === "income") incomeData[d.getMonth()] += t.amount; else expenseData[d.getMonth()] += t.amount; } });
+  const ctx = document.getElementById('incomeExpenseChart').getContext('2d');
+  if (chart) chart.destroy();
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+      datasets: [
+        { label: 'Income', data: incomeData, borderColor: 'green', fill: false, tension: 0.2 },
+        { label: 'Expense', data: expenseData, borderColor: 'red', fill: false, tension: 0.2 }
+      ]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } }
+  });
+}
+
+/* --- Initialize --- */
+document.getElementById("date").value = new Date().toISOString().split("T")[0];
+renderTable(); updateBalance(); rebuildSuggestions();
+</script>
 </body>
 </html>
